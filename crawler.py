@@ -27,7 +27,7 @@ def data_center():
         "중앙지역패스 시도,중앙지역패스 성공,중앙지역패스 성공%,롱패스 시도,롱패스 성공,롱패스 성공%,중거리패스 시도,중거리패스 성공,중거리패스 성공%,"
         "숏패스 시도,숏패스 성공,숏패스 성공%,크로스 시도,크로스 성공,크로스 성공%,"
         "경합 지상 시도,경합 지상 성공,경합 지상 성공%,경합 공중 시도,경합 공중 성공,경합 공중 성공%,태클 시도,태클 성공,태클 성공%,"
-        "클리어링,인터셉트,차단,획득,블락,볼미스,파울,피파울,경고,퇴장"
+        "클리어링,인터셉트,차단,획득,블락,볼미스,파울,피파울,경고,퇴장,구단"
     ]
     columns = data[0].split(",")  # 컬럼 이름을 분리
     try:
@@ -40,34 +40,46 @@ def data_center():
         driver.execute_script("moveMainFrame('0194');")
         driver.execute_script("setDisplayMenu('subMenuLayer', '0207');")
         driver.execute_script("javascript:moveMainFrame('0373');")
+        meeting_element = driver.find_element(By.ID, 'selectMeetSeq')
+        meeting = Select(meeting_element)
+        meetings = meeting.options
 
-        team_element = driver.find_element(By.ID, 'selectTeamId')
-        team = Select(team_element)
-        # 모든 옵션에 대해 반복
-        options = team.options
-        for index in range(1, len(options)):  # 첫 번째 옵션은 '선택'이므로 건너뜀
-            team.select_by_index(index)
-
-            button_search = driver.find_element(By.ID, 'btnSearch')
-            button_search.click()
-
+        for meet_index in range(1, len(meetings)):
+            print(f"Selecting meeting {meet_index} of {len(meetings) - 1}")
+            meeting.select_by_index(meet_index)
             time.sleep(DELAY)
-            html = driver.page_source
-            soup = BeautifulSoup(html, 'html.parser')
-            table = soup.find('table')
 
-            if table:  # 테이블이 존재하는 경우에만 처리
-                rows = table.find_all('tr')
-                print("Collecting all data from Additional record...")
-                for row in rows[2:-1]:
-                    cols = row.find_all(['td', 'th'])  # 'td'와 'th' 모두 찾기
-                    cols = [ele.text.strip() for ele in cols]  # 텍스트를 추출하고 공백 제거
-                    data.append(cols)
-
-            # 다음 옵션을 선택하기 위해 Select 객체를 다시 생성
+            # 팀 선택 박스를 다시 가져와서 Select 객체를 새로 만듦
             team_element = driver.find_element(By.ID, 'selectTeamId')
             team = Select(team_element)
+            options = team.options
+            for index in range(1, len(options)):  # 첫 번째 옵션은 '선택'이므로 건너뜀
+                print(f"Selecting team {index} of {len(options) - 1}")
+                team.select_by_index(index)
 
+                button_search = driver.find_element(By.ID, 'btnSearch')
+                button_search.click()
+
+                time.sleep(DELAY)
+                html = driver.page_source
+                soup = BeautifulSoup(html, 'html.parser')
+                table = soup.find('table')
+
+                if table:  # 테이블이 존재하는 경우에만 처리
+                    team_name = soup.find('p', id='txtTeamName').text
+                    print(team_name)
+                    rows = table.find_all('tr')
+                    for row in rows[2:-1]:
+                        cols = row.find_all(['td', 'th'])  # 'td'와 'th' 모두 찾기
+                        cols = [ele.text.strip() for ele in cols]# 텍스트를 추출하고 공백 제거
+                        cols.append(team_name)
+                        data.append(cols)
+
+                # 다음 옵션을 선택하기 위해 Select 객체를 다시 생성
+                team_element = driver.find_element(By.ID, 'selectTeamId')
+                team = Select(team_element)
+            meeting_element = driver.find_element(By.ID, 'selectMeetSeq')
+            meeting = Select(meeting_element)
     except NoSuchElementException as e:
         print(f"No such element: {e}")
     except TimeoutException as e:
