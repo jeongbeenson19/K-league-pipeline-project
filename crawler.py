@@ -44,6 +44,7 @@ def data_center():
         meeting = Select(meeting_element)
         meetings = meeting.options
 
+        # K리그1 & K리그2 데이터 수집을 위한 반복문
         for meet_index in range(1, len(meetings)):
             print(f"Selecting meeting {meet_index} of {len(meetings) - 1}")
             meeting.select_by_index(meet_index)
@@ -78,6 +79,7 @@ def data_center():
                 # 다음 옵션을 선택하기 위해 Select 객체를 다시 생성
                 team_element = driver.find_element(By.ID, 'selectTeamId')
                 team = Select(team_element)
+            # 다음 옵션을 선택하기 위해 Select 객체를 다시 생성
             meeting_element = driver.find_element(By.ID, 'selectMeetSeq')
             meeting = Select(meeting_element)
     except NoSuchElementException as e:
