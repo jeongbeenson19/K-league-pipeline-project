@@ -1,12 +1,14 @@
 import pandas as pd
 
+
+# 변환 적용을 위한 쉼표 제거를 위한 함수
 def remove_commas(value):
     if isinstance(value, str):
         return value.replace(",", "")
     return value
 
 
-# 쉼표 제거 및 정수 변환 함수
+# 변환 적용을 위한 쉼표 제거 및 정수 변환 함수
 def convert_to_int(value):
     value = remove_commas(value)
     try:
@@ -48,6 +50,7 @@ df = pd.read_csv(input_file)
 # 합계를 구할 수 없는 열(예: 선수 이름, 포지션 등)은 첫 번째 값으로 대체
 
 # 각 컬럼에 대해 변환 적용
+# 선발 출전한 경기와 교체 투입 되어 출전한 경기의 데이터가 별도로 저장되어 합쳐주기 위한 과정
 for col in df.columns:
     if col not in percent_columns:
         df[col] = df[col].apply(convert_to_int)
