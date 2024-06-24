@@ -41,8 +41,8 @@ data = [
 columns = data[0].split(",")
 
 # CSV 파일 경로
-input_file = 'data/k-league-data-20240604-1021.csv'
-output_file = 'data/k-league-data-20240604-1021-merged.csv'
+input_file = 'data/k-league-data-20240624-1042.csv'
+output_file = 'data/k-league-data-20240624-1042-merged.csv'
 # 데이터 로드
 
 df = pd.read_csv(input_file)
