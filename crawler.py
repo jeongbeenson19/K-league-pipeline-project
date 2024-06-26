@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import date
 import time
 import csv
 import os
@@ -15,7 +15,7 @@ driver = webdriver.Chrome(options=chrome_options)
 driver.get(os.environ.get("K_LEAGUE_DATA_PORTAL"))
 
 
-def data_center():
+def data_center(round_number):
 
     # 추출할 컬럼 설정
     data = [
@@ -34,22 +34,22 @@ def data_center():
     columns = data[0].split(",")  # 컬럼 이름을 분리
 
     try:
-        #K 리그 데이터 포털 데이터 센터 접속
+        # K 리그 데이터 포털 데이터 센터 접속
         print("Connecting to data center...")
         time.sleep(DELAY)
         driver.execute_script("moveMainFrame('0011');")
 
         print("Connecting to Additional record...")
         time.sleep(DELAY)
-        driver.execute_script("moveMainFrame('0194');") # 부가기록
-        driver.execute_script("setDisplayMenu('subMenuLayer', '0207');") # 선수기록
-        driver.execute_script("javascript:moveMainFrame('0373');") # 년도별 선수기록
-        meeting_element = driver.find_element(By.ID, 'selectMeetSeq') # 대회 요소 선택
+        driver.execute_script("moveMainFrame('0194');")  # 부가기록
+        driver.execute_script("setDisplayMenu('subMenuLayer', '0207');")  # 선수기록
+        driver.execute_script("javascript:moveMainFrame('0373');")  # 년도별 선수기록
+        meeting_element = driver.find_element(By.ID, 'selectMeetSeq')  # 대회 요소 선택
         meeting = Select(meeting_element)
         meetings = meeting.options
 
         # K리그1 & K리그2 데이터 수집을 위한 반복문
-        for meet_index in range(1, len(meetings)): # 첫 번째 옵션은 '선택'이므로 건너뜀
+        for meet_index in range(1, len(meetings)):  # 첫 번째 옵션은 '선택'이므로 건너뜀
             print(f"Selecting meeting {meet_index} of {len(meetings) - 1}")
             meeting.select_by_index(meet_index)
             time.sleep(DELAY)
@@ -78,7 +78,7 @@ def data_center():
                     rows = table.find_all('tr')
                     for row in rows[2:-1]:
                         cols = row.find_all(['td', 'th'])  # 'td'와 'th' 모두 찾기
-                        cols = [ele.text.strip() for ele in cols]# 텍스트를 추출하고 공백 제거
+                        cols = [ele.text.strip() for ele in cols]  # 텍스트를 추출하고 공백 제거
                         cols.append(team_name)
                         data.append(cols)
 
@@ -100,12 +100,12 @@ def data_center():
         driver.quit()
 
     # csv파일로 저장
-    output_file = f"data/k-league-data-{datetime.now().strftime('%Y%m%d-%H%M')}.csv"
+    output_file = f"data/{round_number}-round-data.csv"
     with open(output_file, mode='w', newline='', encoding='utf-8-sig') as file:
         writer = csv.writer(file)
         writer.writerow(columns)  # 컬럼 이름 작성
         writer.writerows(data[1:])  # 데이터 작성
-    print(f"Data has been written to {output_file}")
+    print(f"Data has been written to \n{output_file}")
 
 
-data_center()
+data_center(19)
