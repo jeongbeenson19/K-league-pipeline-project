@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import RobustScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 # 변환 적용을 위한 쉼표 제거를 위한 함수
@@ -17,29 +17,24 @@ def convert_to_int(value):
         return int(value)
     except ValueError:
         return value
-# 드리블 성공% 및 패스 성공% 등 퍼센트 컬럼에 대해서는 따로 처리하지 않음
 
 
-def preprocessing(round_number):
-    sc = RobustScaler()
+# 전처리 함수
+def preprocessing(round_number, scaling_method):
 
+    # 스케일링 방법 선택
+    if scaling_method == 'standard':
+        sc = StandardScaler()
+    elif scaling_method == 'minmax':
+        sc = MinMaxScaler()
+    else:
+        ValueError('Unknown scaling method, Use "standard" or "minmax"')
+
+    # 드리블 성공% 및 패스 성공% 등 퍼센트 컬럼에 대해서는 따로 처리하지 않음
     percent_columns = [
         '드리블 성공%', '패스 성공%', '전방 패스 성공%', '후방 패스 성공%', '횡패스 성공%',
         '공격지역패스 성공%', '수비지역패스 성공%', '중앙지역패스 성공%', '롱패스 성공%', '중거리패스 성공%',
         '숏패스 성공%', '크로스 성공%', '경합 지상 성공%', '경합 공중 성공%', '태클 성공%'
-    ]
-    data = [
-        "년도,선수명,포지션,등번호,출전시간(분),"
-        "득점,도움,슈팅,유효 슈팅,차단된슈팅,벗어난슈팅,PA내 슈팅,PA외 슈팅,"
-        "오프사이드,프리킥,코너킥,스로인,"
-        "드리블 시도,드리블 성공,드리블 성공%,"
-        "패스 시도,패스 성공,패스 성공%,키패스,전방 패스 시도,전방 패스 성공,전방 패스 성공%,후방 패스 시도,후방 패스 성공,후방 패스 성공%,"
-        "횡패스 시도,횡패스 성공,횡패스 성공%,"
-        "공격지역패스 시도,공격지역패스 성공,공격지역패스 성공%,수비지역패스 시도,수비지역패스 성공,수비지역패스 성공%,"
-        "중앙지역패스 시도,중앙지역패스 성공,중앙지역패스 성공%,롱패스 시도,롱패스 성공,롱패스 성공%,중거리패스 시도,중거리패스 성공,중거리패스 성공%,"
-        "숏패스 시도,숏패스 성공,숏패스 성공%,크로스 시도,크로스 성공,크로스 성공%,"
-        "경합 지상 시도,경합 지상 성공,경합 지상 성공%,경합 공중 시도,경합 공중 성공,경합 공중 성공%,태클 시도,태클 성공,태클 성공%,"
-        "클리어링,인터셉트,차단,획득,블락,볼미스,파울,피파울,경고,퇴장,구단"
     ]
 
     # CSV 파일 경로
@@ -47,17 +42,16 @@ def preprocessing(round_number):
     input_xg_file = f'data/{round_number}-round-xg.csv'
     output_preprocessed_file = f'data/preprocessed/{round_number}round-preprocessed.csv'
     output_scaled_file = f'data/preprocessed/{round_number}round-scaled.csv'
-    # 선수 이름과 포지션을 기준으로 그룹화하여 합계 계산
-    # 합계를 구할 수 없는 열(예: 선수 이름, 포지션 등)은 첫 번째 값으로 대체
 
     df = pd.read_csv(input_data_file)
-    # 각 컬럼에 대해 변환 적용
-    # 선발 출전한 경기와 교체 투입 되어 출전한 경기의 데이터가 별도로 저장되어 합쳐주기 위한 과정
 
+    # HTML에서 추출된 문자열로 이루어진 데이터를 정수형으로 변환
     for col in df.columns:
         if col not in percent_columns:
             df[col] = df[col].apply(convert_to_int)
 
+    # 선수 이름과 포지션을 기준으로 그룹화하여 합계 계산
+    # 합계를 구할 수 없는 열(예: 선수 이름, 포지션 등)은 첫 번째 값으로 대체
     grouped_df = df.groupby(['선수명', '구단'], as_index=False).agg(
         {
             '포지션': 'first',
@@ -164,7 +158,7 @@ def preprocessing(round_number):
         merged_df[col] = merged_df[col] / num_matches
 
     merged_df = merged_df.fillna(0)  # NaN 값을 0으로 대체
-    scaled_df = sc.fit_transform(merged_df[columns_to_normalize])
+    scaled_df = sc.fit_transform(merged_df[columns_to_normalize])  # 데이터 스케일링
 
     # 합쳐진 데이터 저장
     merged_df.to_csv(output_preprocessed_file, index=False)
@@ -173,7 +167,5 @@ def preprocessing(round_number):
     scaled_df.to_csv(output_scaled_file)
     print(f"Scaled data has been written to {output_scaled_file}")
 
+    # 두 가지 데이터 프레임으로 리턴
     return merged_df, scaled_df
-
-
-preprocessing(18)
