@@ -1,9 +1,6 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from bs4 import BeautifulSoup
-from datetime import date
 import time
 import csv
 import os
@@ -17,7 +14,7 @@ driver.get(os.environ.get("K_LEAGUE_DATA_PORTAL"))
 
 def xg_crawler(round_number):
     try:
-        xg_data = ["순위,선수,구단,출장수,출장시간[분],슈팅,득점,xG,득점/xG,90분당 xG"]
+        xg_data = ["순위,선수명,구단,출전수,출전시간(분),슈팅,득점,xG,득점/xG,90분당 xG"]
         xg_columns = xg_data[0].split(",")
         # K 리그 데이터 포털 데이터 센터 접속
         print("Connecting to data center...")
@@ -58,4 +55,4 @@ def xg_crawler(round_number):
     print(f"Data has been written to \n{xg_output_file}")
 
 
-xg_crawler(19)
+xg_crawler(18)
