@@ -1,8 +1,7 @@
+import os
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
-# from crawler import data_center
-# from xG_crawler import xg_crawler
 
 
 # 변환 적용을 위한 쉼표 제거를 위한 함수
@@ -23,8 +22,11 @@ def convert_to_int(value):
 
 # 전처리 함수
 def preprocessing(round_number, scaling_method):
-    # dc = data_center(round_number)
-    # xg = xg_crawler(round_number)
+    # CSV 파일 경로
+    input_data_file = f'data/{round_number}-round-data.csv'
+    input_xg_file = f'data/{round_number}-round-xg.csv'
+    output_preprocessed_file = f'data/preprocessed/{round_number}-round-preprocessed.csv'
+    output_scaled_file = f'data/preprocessed/{round_number}-round-scaled.csv'
 
     # 스케일링 방법 선택
     if scaling_method == 'standard':
@@ -34,20 +36,27 @@ def preprocessing(round_number, scaling_method):
     else:
         ValueError('Unknown scaling method, Use "standard" or "minmax"')
 
+    # 파일이 존재하는지 확인
+    if not os.path.exists(input_data_file):
+        print(f"Input data files for round {round_number} do not exist. Crawling data...")
+        import crawler
+        player_data = crawler.data_center(round_number=round_number)
+
+    if not os.path.exists(input_xg_file):
+        print(f"Input xG data files for round {round_number} do not exist. Crawling data...")
+        import xG_crawler
+        xG = xG_crawler.xg_crawler(round_number=round_number)
+
+    data = pd.read_csv(input_data_file)
+    xg_data = pd.read_csv(input_xg_file)
+    df = pd.DataFrame(data)
+
     # 드리블 성공% 및 패스 성공% 등 퍼센트 컬럼에 대해서는 따로 처리하지 않음
     percent_columns = [
         '드리블 성공%', '패스 성공%', '전방 패스 성공%', '후방 패스 성공%', '횡패스 성공%',
         '공격지역패스 성공%', '수비지역패스 성공%', '중앙지역패스 성공%', '롱패스 성공%', '중거리패스 성공%',
         '숏패스 성공%', '크로스 성공%', '경합 지상 성공%', '경합 공중 성공%', '태클 성공%'
     ]
-
-    # CSV 파일 경로
-    input_data_file = f'data/{round_number}-round-data.csv'
-    input_xg_file = f'data/{round_number}-round-xg.csv'
-    output_preprocessed_file = f'data/preprocessed/{round_number}round-preprocessed.csv'
-    output_scaled_file = f'data/preprocessed/{round_number}round-scaled.csv'
-
-    df = pd.read_csv(input_data_file)
 
     # HTML에서 추출된 문자열로 이루어진 데이터를 정수형으로 변환
     for col in df.columns:
@@ -137,7 +146,6 @@ def preprocessing(round_number, scaling_method):
     # Feature engineering - Defensive Action
 
     # xG 데이터 기존 데이터 프레임에 병합
-    xg_data = pd.read_csv(input_xg_file)
     xg_df = pd.DataFrame(xg_data)
     xg_df = xg_df.drop(columns=['순위', '출전수', '출전시간(분)', '슈팅', '득점', '90분당 xG'])
     merge_condition = ['선수명', '구단']
@@ -158,20 +166,26 @@ def preprocessing(round_number, scaling_method):
 
     # 대상 컬럼의 데이터를 (출전시간 / 90)으로 나누어 경기 당 이벤트 데이터로 변환
     # 출전시간이 0인 경우를 처리
-    for col in columns_to_normalize[:-1]:
+    for col in columns_to_normalize[:-1]:  # 'xG/득점' 열을 대상에서 제외
         num_matches = merged_df['출전시간(분)'] / 90
         num_matches.replace(0, np.nan, inplace=True)  # 0을 NaN으로 대체하여 무한대 값 발생 방지
         merged_df[col] = merged_df[col] / num_matches
 
     merged_df = merged_df.fillna(0)  # NaN 값을 0으로 대체
-    scaled_df = sc.fit_transform(merged_df[columns_to_normalize])  # 데이터 스케일링
+    # 데이터 스케일링
+    scaled_df = merged_df.copy()
+    scaled_columns = sc.fit_transform(merged_df[columns_to_normalize])
+    scaled_columns_df = pd.DataFrame(scaled_columns, columns=columns_to_normalize)
+    scaled_df[columns_to_normalize] = scaled_columns_df
 
     # 합쳐진 데이터 저장
     merged_df.to_csv(output_preprocessed_file, index=False)
     print(f"Data has been written to {output_preprocessed_file}")
-    scaled_df = pd.DataFrame(scaled_df, columns=columns_to_normalize)
-    scaled_df.to_csv(output_scaled_file)
+    scaled_df.to_csv(output_scaled_file, index=False)
     print(f"Scaled data has been written to {output_scaled_file}")
 
     # 두 가지 데이터 프레임으로 리턴
     return merged_df, scaled_df
+
+
+preprocessing(18, 'standard')
