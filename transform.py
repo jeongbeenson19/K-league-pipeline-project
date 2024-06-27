@@ -145,8 +145,8 @@ def preprocessing(round_number, scaling_method):
 
     # Feature engineering - Defensive Action
 
-    # xG 데이터 기존 데이터 프레임에 병합
     xg_df = pd.DataFrame(xg_data)
+    # xG 데이터 기존 데이터 프레임에 병합
     xg_df = xg_df.drop(columns=['순위', '출전수', '출전시간(분)', '슈팅', '득점', '90분당 xG'])
     merge_condition = ['선수명', '구단']
     merged_df = pd.merge(grouped_df, xg_df, on=merge_condition, how='outer')
@@ -186,6 +186,3 @@ def preprocessing(round_number, scaling_method):
 
     # 두 가지 데이터 프레임으로 리턴
     return merged_df, scaled_df
-
-
-preprocessing(18, 'standard')
