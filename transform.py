@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+# from crawler import data_center
+# from xG_crawler import xg_crawler
 
 
 # 변환 적용을 위한 쉼표 제거를 위한 함수
@@ -21,6 +23,8 @@ def convert_to_int(value):
 
 # 전처리 함수
 def preprocessing(round_number, scaling_method):
+    # dc = data_center(round_number)
+    # xg = xg_crawler(round_number)
 
     # 스케일링 방법 선택
     if scaling_method == 'standard':
@@ -54,6 +58,8 @@ def preprocessing(round_number, scaling_method):
     # 합계를 구할 수 없는 열(예: 선수 이름, 포지션 등)은 첫 번째 값으로 대체
     grouped_df = df.groupby(['선수명', '구단'], as_index=False).agg(
         {
+            '선수명': 'first',
+            '구단': 'first',
             '포지션': 'first',
             '등번호': 'first',
             '출전시간(분)': 'sum',
@@ -125,7 +131,6 @@ def preprocessing(round_number, scaling_method):
             '피파울': 'sum',
             '경고': 'sum',
             '퇴장': 'sum',
-            '구단': 'first'
         }
     ).reset_index()
 
@@ -134,8 +139,9 @@ def preprocessing(round_number, scaling_method):
     # xG 데이터 기존 데이터 프레임에 병합
     xg_data = pd.read_csv(input_xg_file)
     xg_df = pd.DataFrame(xg_data)
-    xg_df = xg_df.drop(columns=['순위', '출전수', '슈팅', '득점', '구단', '출전시간(분)'])
-    merged_df = pd.merge(grouped_df, xg_df, on='선수명', how='outer')
+    xg_df = xg_df.drop(columns=['순위', '출전수', '출전시간(분)', '슈팅', '득점', '90분당 xG'])
+    merge_condition = ['선수명', '구단']
+    merged_df = pd.merge(grouped_df, xg_df, on=merge_condition, how='outer')
     merged_df = merged_df.drop_duplicates(subset='index', keep='first')
 
     # 경기당 데이터로 변환할 컬럼
@@ -147,7 +153,7 @@ def preprocessing(round_number, scaling_method):
         '중앙지역패스 시도', '중앙지역패스 성공', '롱패스 시도', '롱패스 성공', '중거리패스 시도',
         '중거리패스 성공', '숏패스 시도', '숏패스 성공', '크로스 시도', '크로스 성공', '경합 지상 시도',
         '경합 지상 성공', '경합 공중 시도', '경합 공중 성공', '태클 시도', '태클 성공', '클리어링',
-        '인터셉트', '차단', '획득', '블락', '볼미스', '파울', '피파울', '경고', '퇴장', 'xG', '득점/xG', '90분당 xG'
+        '인터셉트', '차단', '획득', '블락', '볼미스', '파울', '피파울', '경고', '퇴장', 'xG'
     ]
 
     # 대상 컬럼의 데이터를 (출전시간 / 90)으로 나누어 경기 당 이벤트 데이터로 변환
