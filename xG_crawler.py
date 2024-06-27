@@ -53,6 +53,3 @@ def xg_crawler(round_number):
         writer.writerow(xg_columns)  # 컬럼 이름 작성
         writer.writerows(xg_data[1:])  # 데이터 작성
     print(f"Data has been written to \n{xg_output_file}")
-
-
-xg_crawler(18)
