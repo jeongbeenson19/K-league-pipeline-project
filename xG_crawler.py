@@ -1,3 +1,4 @@
+import pandas as pd
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from bs4 import BeautifulSoup
@@ -52,4 +53,19 @@ def xg_crawler(round_number):
         writer = csv.writer(file)
         writer.writerow(xg_columns)  # 컬럼 이름 작성
         writer.writerows(xg_data[1:])  # 데이터 작성
+
+    df = pd.read_csv(xg_output_file)
+
+    # K리그 데이터 포털 내 선수의 소속 구단 형식이 데이터마다 다르게 저장
+    df.loc[df['구단'] == '광주 FC', '구단'] = '광주'
+    df.loc[df['구단'] == '김천 상무 FC', '구단'] = '김천'
+    df.loc[df['구단'] == '울산 HD', '구단'] = '울산'
+    df.loc[df['구단'] == '서울 이랜드', '구단'] = '서울E'
+    df.loc[df['구단'] == '충남 아산 FC', '구단'] = '충남아산'
+    df.loc[df['구단'] == '김포FC', '구단'] = '김포'
+    df.loc[df['구단'] == '충북청주FC', '구단'] = '충북청주'
+    df.loc[df['구단'] == '천안시티FC', '구단'] = '천안'
+
+    df.to_csv(xg_output_file, index=False, encoding='utf-8-sig')
+
     print(f"Data has been written to \n{xg_output_file}")
