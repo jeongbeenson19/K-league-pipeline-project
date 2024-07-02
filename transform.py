@@ -152,6 +152,13 @@ def preprocessing(round_number, scaling_method):
     merged_df = pd.merge(grouped_df, xg_df, on=merge_condition, how='outer')
     merged_df = merged_df.drop_duplicates(subset='index', keep='first')
 
+    # Feature engineering - Defensive Action
+    merged_df['Defensive Action'] = (merged_df['태클 시도'] + merged_df['클리어링']
+                                     + merged_df['인터셉트'] + merged_df['차단'] + merged_df['블락'])
+
+    # Feature engineering - Possession Won
+    merged_df['Possession won'] = (merged_df['획득'] + merged_df['태클 성공'] + merged_df['인터셉트'])
+
     # 경기당 데이터로 변환할 컬럼
     columns_to_normalize = [
         '득점', '도움', '슈팅', '유효 슈팅', '차단된슈팅', '벗어난슈팅', 'PA내 슈팅', 'PA외 슈팅',
@@ -161,22 +168,26 @@ def preprocessing(round_number, scaling_method):
         '중앙지역패스 시도', '중앙지역패스 성공', '롱패스 시도', '롱패스 성공', '중거리패스 시도',
         '중거리패스 성공', '숏패스 시도', '숏패스 성공', '크로스 시도', '크로스 성공', '경합 지상 시도',
         '경합 지상 성공', '경합 공중 시도', '경합 공중 성공', '태클 시도', '태클 성공', '클리어링',
-        '인터셉트', '차단', '획득', '블락', '볼미스', '파울', '피파울', '경고', '퇴장', 'xG'
+        '인터셉트', '차단', '획득', '블락', '볼미스', '파울', '피파울', '경고', '퇴장', 'Defensive Action', 'Possession won', 'xG'
     ]
 
     # 대상 컬럼의 데이터를 (출전시간 / 90)으로 나누어 경기 당 이벤트 데이터로 변환
-    # 출전시간이 0인 경우를 처리
-    for col in columns_to_normalize[:-1]:  # 'xG/득점' 열을 대상에서 제외
+    for col in columns_to_normalize[:-1]:  # 'xG' 열을 대상에서 제외
         num_matches = merged_df['출전시간(분)'] / 90
         num_matches.replace(0, np.nan, inplace=True)  # 0을 NaN으로 대체하여 무한대 값 발생 방지
         merged_df[col] = merged_df[col] / num_matches
-
     merged_df = merged_df.fillna(0)  # NaN 값을 0으로 대체
+
+
     # 데이터 스케일링
+    string_column = ['index', '선수명', '구단', '포지션', '등번호']
     scaled_df = merged_df.copy()
-    scaled_columns = sc.fit_transform(merged_df[columns_to_normalize])
-    scaled_columns_df = pd.DataFrame(scaled_columns, columns=columns_to_normalize)
-    scaled_df[columns_to_normalize] = scaled_columns_df
+    # 문자열 열을 제외한 숫자 열 스케일링
+    scaled_columns = sc.fit_transform(merged_df.drop(columns=string_column))
+    # 스케일링 결과를 DataFrame으로 변환, 원래 열 이름 유지
+    scaled_columns_df = pd.DataFrame(scaled_columns, columns=merged_df.drop(columns=string_column).columns)
+    # 스케일링된 결과를 기존 DataFrame에 통합
+    scaled_df[scaled_columns_df.columns] = scaled_columns_df
 
     # 합쳐진 데이터 저장
     merged_df.to_csv(output_preprocessed_file, index=False)
