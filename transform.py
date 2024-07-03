@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 # 변환 적용을 위한 쉼표 제거를 위한 함수
@@ -21,20 +20,11 @@ def convert_to_int(value):
 
 
 # 전처리 함수
-def preprocessing(round_number, scaling_method):
+def preprocessing(round_number):
     # CSV 파일 경로
     input_data_file = f'data/{round_number}-round-data.csv'
     input_xg_file = f'data/{round_number}-round-xg.csv'
     output_preprocessed_file = f'data/preprocessed/{round_number}-round-preprocessed.csv'
-    output_scaled_file = f'data/preprocessed/{round_number}-round-scaled.csv'
-
-    # 스케일링 방법 선택
-    if scaling_method == 'standard':
-        sc = StandardScaler()
-    elif scaling_method == 'minmax':
-        sc = MinMaxScaler()
-    else:
-        ValueError('Unknown scaling method, Use "standard" or "minmax"')
 
     # 파일이 존재하는지 확인
     if not os.path.exists(input_data_file):
@@ -171,29 +161,18 @@ def preprocessing(round_number, scaling_method):
         '인터셉트', '차단', '획득', '블락', '볼미스', '파울', '피파울', '경고', '퇴장', 'Defensive Action', 'Possession won', 'xG'
     ]
 
-    # 대상 컬럼의 데이터를 (출전시간 / 90)으로 나누어 경기 당 이벤트 데이터로 변환
-    for col in columns_to_normalize[:-1]:  # 'xG' 열을 대상에서 제외
+    # 대상 컬럼의 데이터를 (출전시간 / 90)으로 나눈 새로운 열을 생성
+    for col in columns_to_normalize:
+        new_col_name = f'{col}/90'
         num_matches = merged_df['출전시간(분)'] / 90
         num_matches.replace(0, np.nan, inplace=True)  # 0을 NaN으로 대체하여 무한대 값 발생 방지
-        merged_df[col] = merged_df[col] / num_matches
+        merged_df[new_col_name] = merged_df[col] / num_matches
+
     merged_df = merged_df.fillna(0)  # NaN 값을 0으로 대체
-
-
-    # 데이터 스케일링
-    string_column = ['index', '선수명', '구단', '포지션', '등번호']
-    scaled_df = merged_df.copy()
-    # 문자열 열을 제외한 숫자 열 스케일링
-    scaled_columns = sc.fit_transform(merged_df.drop(columns=string_column))
-    # 스케일링 결과를 DataFrame으로 변환, 원래 열 이름 유지
-    scaled_columns_df = pd.DataFrame(scaled_columns, columns=merged_df.drop(columns=string_column).columns)
-    # 스케일링된 결과를 기존 DataFrame에 통합
-    scaled_df[scaled_columns_df.columns] = scaled_columns_df
 
     # 합쳐진 데이터 저장
     merged_df.to_csv(output_preprocessed_file, index=False)
     print(f"Data has been written to {output_preprocessed_file}")
-    scaled_df.to_csv(output_scaled_file, index=False)
-    print(f"Scaled data has been written to {output_scaled_file}")
 
     # 두 가지 데이터 프레임으로 리턴
-    return merged_df, scaled_df
+    return merged_df
