@@ -9,7 +9,9 @@ import numpy as np
 class RadarChart(object):
     def __init__(self, player_name, team_name, round_number, df):
         self.fig = go.Figure()
+        self.teams_division_2 = ['수원', '전남', '천안', '안산', '서울E', '성남', '김포', '충북청주', '안양', '충남아산', '부산', '부천']
         self.df = df
+        self.df = df[~df['구단'].isin(self.teams_division_2)]
         self.player_name = player_name
         self.team_name = team_name
         self.round_number = round_number
@@ -96,7 +98,7 @@ class RadarChart(object):
                 font=dict(
                     size=25,
                     family="MyCustomFont, sans-serif",
-                    color="rgb(0,22,72)"  # 제목 색상 변경
+                    color="white"  # 제목 색상 변경
                 ),
                 pad=dict(
                     b=30,
@@ -114,7 +116,6 @@ class RadarChart(object):
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
-# 예제 데이터프레임 생성 (실제 데이터를 사용)
 data = pd.read_csv('data/preprocessed/27-round-preprocessed.csv')
 
 df = pd.DataFrame(data)
@@ -129,14 +130,50 @@ app.layout = html.Div([
     dcc.Graph(id='radar-chart')
 ])
 
+# 레이아웃 설정
+app.layout = html.Div([
+    dcc.Dropdown(
+        id='team-dropdown',
+        options=[{'label': team, 'value': team} for team in df['구단'].unique()],
+        value=df['구단'].unique()[0]
+    ),
+    dcc.Dropdown(
+        id='player-dropdown'
+    ),
+    dcc.Graph(id='radar-chart')
+])
 
-# 콜백 설정
+
+# 콜백: 구단 선택에 따라 선수 목록을 업데이트
+@app.callback(
+    dash.dependencies.Output('player-dropdown', 'options'),
+    [dash.dependencies.Input('team-dropdown', 'value')]
+)
+def set_players_options(selected_team):
+    filtered_df = df[df['구단'] == selected_team]
+    return [{'label': player, 'value': player} for player in filtered_df['선수명'].unique()]
+
+
+# 콜백: 선수 선택에 따라 기본 선수 설정
+@app.callback(
+    dash.dependencies.Output('player-dropdown', 'value'),
+    [dash.dependencies.Input('player-dropdown', 'options')]
+)
+def set_players_value(available_options):
+    return available_options[0]['value'] if available_options else None
+
+
+# 콜백: 선수 선택에 따라 레이더 차트 업데이트
 @app.callback(
     dash.dependencies.Output('radar-chart', 'figure'),
-    [dash.dependencies.Input('player-dropdown', 'value')]
+    [dash.dependencies.Input('player-dropdown', 'value'),
+     dash.dependencies.Input('team-dropdown', 'value')]
 )
-def update_chart(selected_player):
-    chart = RadarChart(player_name=selected_player, team_name=df[df['선수명'] == selected_player]['구단'].values[0],
+def update_chart(selected_player, selected_team):
+    if not selected_player or not selected_team:
+        return go.Figure()
+
+    chart = RadarChart(player_name=selected_player, team_name=selected_team,
                        round_number=27, df=df)
     return chart.get_figure()
 
