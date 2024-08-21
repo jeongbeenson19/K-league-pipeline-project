@@ -7,18 +7,17 @@ import numpy as np
 
 
 class RadarChart(object):
-    def __init__(self, player_name, team_name, round_number, df):
+    def __init__(self, player_name, team_name, round_number, df, radar_columns):
         self.fig = go.Figure()
         self.teams_division_2 = ['수원', '전남', '천안', '안산', '서울E', '성남', '김포', '충북청주', '안양', '충남아산', '부산', '부천']
         self.df = df
-        self.df = df[~df['구단'].isin(self.teams_division_2)]
+        self.df = self.df[~self.df['구단'].isin(self.teams_division_2)]
         self.player_name = player_name
         self.team_name = team_name
         self.round_number = round_number
         self.player_position = self.df[self.df['선수명'] == player_name]["포지션"].values[0]
         self.string_column = ['index', '선수명', '구단', '포지션', '등번호']
-        self.radar_columns = ['득점/xG', '슈팅/90', '유효 슈팅/90', '드리블 시도/90', '공격지역패스 성공%', '키패스/90', 'Defensive Action/90',
-                              'Possession won/90', '경합 공중 성공/90']
+        self.radar_columns = radar_columns
 
         # 특정 선수의 포지션과 팀 기준으로 필터링
         self.relative_df = df[df['포지션'] == self.player_position]
@@ -36,7 +35,10 @@ class RadarChart(object):
         self.radar_scaled_df[self.radar_columns] = self.relative_df[self.radar_columns].apply(percentile_rank)
 
         # 특정 선수의 데이터 추출
-        self.target_df = self.radar_scaled_df[self.radar_scaled_df["선수명"] == player_name][self.radar_columns]
+        self.target_df = self.radar_scaled_df[
+            (self.radar_scaled_df["선수명"] == player_name) &
+            (self.radar_scaled_df["구단"] == team_name)
+            ][self.radar_columns]
 
     def get_figure(self):
         if self.target_df.empty:
@@ -140,8 +142,23 @@ app.layout = html.Div([
     dcc.Dropdown(
         id='player-dropdown'
     ),
-    dcc.Graph(id='radar-chart')
+    dcc.Graph(id='radar-chart'),
+    dcc.Checklist(
+        id='column-checklist',
+        options=[{'label': col, 'value': col} for col in df.columns if col not in ['index', '선수명', '구단', '포지션', '등번호']],
+        value=['득점/xG', '슈팅/90'],  # 기본 선택 컬럼
+        inline=True
+    ),
 ])
+
+
+# 콜백: 선수 선택에 따라 기본 선수 설정
+@app.callback(
+    dash.dependencies.Output('player-dropdown', 'value'),
+    [dash.dependencies.Input('player-dropdown', 'options')]
+)
+def set_players_value(available_options):
+    return available_options[0]['value'] if available_options else None
 
 
 # 콜백: 구단 선택에 따라 선수 목록을 업데이트
@@ -154,27 +171,19 @@ def set_players_options(selected_team):
     return [{'label': player, 'value': player} for player in filtered_df['선수명'].unique()]
 
 
-# 콜백: 선수 선택에 따라 기본 선수 설정
-@app.callback(
-    dash.dependencies.Output('player-dropdown', 'value'),
-    [dash.dependencies.Input('player-dropdown', 'options')]
-)
-def set_players_value(available_options):
-    return available_options[0]['value'] if available_options else None
-
-
-# 콜백: 선수 선택에 따라 레이더 차트 업데이트
+# 콜백: 선택된 컬럼과 선수에 따라 레이더 차트 업데이트
 @app.callback(
     dash.dependencies.Output('radar-chart', 'figure'),
     [dash.dependencies.Input('player-dropdown', 'value'),
-     dash.dependencies.Input('team-dropdown', 'value')]
+     dash.dependencies.Input('team-dropdown', 'value'),
+     dash.dependencies.Input('column-checklist', 'value')]
 )
-def update_chart(selected_player, selected_team):
-    if not selected_player or not selected_team:
+def update_chart(selected_player, selected_team, selected_columns):
+    if not selected_player or not selected_team or not selected_columns:
         return go.Figure()
 
     chart = RadarChart(player_name=selected_player, team_name=selected_team,
-                       round_number=27, df=df)
+                       round_number=27, df=df, radar_columns=selected_columns)
     return chart.get_figure()
 
 
