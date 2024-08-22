@@ -49,7 +49,9 @@ class RadarChart(object):
                     'yref': 'paper',
                     'showarrow': False,
                     'font': {
-                        'size': 20
+                        'size': 20,
+                        'family': 'MyCustomFont, sans-serif',
+                        'color': 'white'
                     },
                     'x': 0.5,
                     'y': 0.5,
@@ -57,8 +59,19 @@ class RadarChart(object):
                     'yanchor': 'middle'
                 }],
                 plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgb(0,0,0,0)',
-                height=540
+                paper_bgcolor='rgb(0,89,167)',
+                width=540,
+                height=540,
+                xaxis=dict(
+                    showgrid=False,  # x축 그리드 라인 숨기기
+                    zeroline=False,  # x축 기준선 숨기기
+                    visible=False,  # x축 자체 숨기기
+                ),
+                yaxis=dict(
+                    showgrid=False,  # y축 그리드 라인 숨기기
+                    zeroline=False,  # y축 기준선 숨기기
+                    visible=False,  # y축 자체 숨기기
+                )
             )
             return self.fig
 
@@ -111,10 +124,10 @@ class RadarChart(object):
                       color='white',
                       )
         )
-
         return self.fig
 
 
+# TODO png로 저장 & HTML로 저장 기능 추가
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
@@ -122,6 +135,7 @@ data = pd.read_csv('data/preprocessed/27-round-preprocessed.csv')
 
 df = pd.DataFrame(data)
 
+# TODO Scatter chart 추가
 app.layout = html.Div([
     # Dropdowns are aligned and set with specific width
     html.Div([
@@ -137,7 +151,8 @@ app.layout = html.Div([
         ),
     ], style={'textAlign': 'center'}),  # 전체 Dropdowns를 중앙에 배치
 
-    # Centered Graph
+    # TODO '포지션' 정보 추가 및 MF <-> FW 전환 기능
+    # TODO Hover 정보에 percentile_rank() 적용 전 raw_data 출력
     html.Div([
         dcc.Graph(id='radar-chart')
     ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'margin': '10px auto'}),  # 그래프를 중앙에 배치
