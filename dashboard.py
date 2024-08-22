@@ -37,8 +37,7 @@ class RadarChart(object):
         # 특정 선수의 데이터 추출
         self.target_df = self.radar_scaled_df[
             (self.radar_scaled_df["선수명"] == player_name) &
-            (self.radar_scaled_df["구단"] == team_name)
-            ][self.radar_columns]
+            (self.radar_scaled_df["구단"] == team_name)][self.radar_columns]
 
     def get_figure(self):
         if self.target_df.empty:
@@ -58,7 +57,8 @@ class RadarChart(object):
                     'yanchor': 'middle'
                 }],
                 plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgb(0,0,0,0)'
+                paper_bgcolor='rgb(0,0,0,0)',
+                height=540
             )
             return self.fig
 
@@ -122,32 +122,38 @@ data = pd.read_csv('data/preprocessed/27-round-preprocessed.csv')
 
 df = pd.DataFrame(data)
 
-# 레이아웃 설정
 app.layout = html.Div([
-    dcc.Dropdown(
-        id='player-dropdown',
-        options=[{'label': player, 'value': player} for player in df['선수명'].unique()],
-        value=df['선수명'].iloc[0]
-    ),
-    dcc.Graph(id='radar-chart')
-])
+    # Dropdowns are aligned and set with specific width
+    html.Div([
+        dcc.Dropdown(
+            id='team-dropdown',
+            options=[{'label': team, 'value': team} for team in df['구단'].unique()],
+            value=df['구단'].unique()[0],
+            style={'width': '540px', 'margin': '0 auto'}  # 너비 설정 및 중앙 정렬
+        ),
+        dcc.Dropdown(
+            id='player-dropdown',
+            style={'width': '540px', 'margin': '0 auto'}  # 너비 설정 및 중앙 정렬
+        ),
+    ], style={'textAlign': 'center'}),  # 전체 Dropdowns를 중앙에 배치
 
-# 레이아웃 설정
-app.layout = html.Div([
-    dcc.Dropdown(
-        id='team-dropdown',
-        options=[{'label': team, 'value': team} for team in df['구단'].unique()],
-        value=df['구단'].unique()[0]
-    ),
-    dcc.Dropdown(
-        id='player-dropdown'
-    ),
-    dcc.Graph(id='radar-chart'),
+    # Centered Graph
+    html.Div([
+        dcc.Graph(id='radar-chart')
+    ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'margin': '10px auto'}),  # 그래프를 중앙에 배치
+
+    # Checklist
     dcc.Checklist(
         id='column-checklist',
         options=[{'label': col, 'value': col} for col in df.columns if col not in ['index', '선수명', '구단', '포지션', '등번호']],
-        value=['득점/xG', '슈팅/90'],  # 기본 선택 컬럼
-        inline=True
+        value=['득점', '도움', '키패스'],  # 기본 선택 컬럼
+        inline=True,
+        style={
+            'display': 'grid',
+            'grid-template-columns': 'repeat(7, 1fr)',  # 7열로 배치
+            'gap': '10px',  # 항목 간의 간격
+            'margin': '20px 0'  # 상하 마진 추가
+        }
     ),
 ])
 
