@@ -53,13 +53,22 @@ def preprocessing(round_number):
         if col not in percent_columns:
             df[col] = df[col].apply(convert_to_int)
 
+    # MF와 FW가 함께 존재하는 경우 FW로 처리
+    def resolve_position(positions):
+        if 'FW' in positions.values:
+            return 'FW'
+        elif 'MF' in positions.values:
+            return 'MF'
+        else:
+            return positions.iloc[0]
+
     # 선수 이름과 포지션을 기준으로 그룹화하여 합계 계산
     # 합계를 구할 수 없는 열(예: 선수 이름, 포지션 등)은 첫 번째 값으로 대체
     grouped_df = df.groupby(['선수명', '구단'], as_index=False).agg(
         {
             '선수명': 'first',
             '구단': 'first',
-            '포지션': 'first',
+            '포지션': resolve_position,
             '등번호': 'first',
             '출전시간(분)': 'sum',
             '득점': 'sum',
