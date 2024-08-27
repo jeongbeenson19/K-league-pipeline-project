@@ -1,6 +1,7 @@
 import dash
 from dash import dcc, html
 import plotly.graph_objs as go
+from dash.dependencies import Output, Input, State
 import pandas as pd
 from scipy.stats import rankdata
 import numpy as np
@@ -9,9 +10,10 @@ import numpy as np
 class RadarChart(object):
     def __init__(self, player_name, team_name, round_number, df, radar_columns):
         self.fig = go.Figure()
-        self.teams_division_2 = ['수원', '전남', '천안', '안산', '서울E', '성남', '김포', '충북청주', '안양', '충남아산', '부산', '부천']
+        self.teams_division_2 =[
+            '경남', '수원', '전남', '천안', '안산', '서울E', '성남', '김포', '충북청주', '안양', '충남아산', '부산', '부천'
+        ]
         self.df = df
-        self.df = self.df[~self.df['구단'].isin(self.teams_division_2)]
         self.player_name = player_name
         self.team_name = team_name
         self.round_number = round_number
@@ -105,7 +107,7 @@ class RadarChart(object):
             plot_bgcolor='rgb(0,22,72)',
             paper_bgcolor='rgb(0,89,167)',
             title=dict(
-                text=f"{self.player_name} Radar Chart until {self.round_number} Round",
+                text=f"{self.player_name} Radar Chart ~ {self.round_number} Round",
                 x=0.5,  # 제목 중앙 정렬
                 y=0.95,  # 제목 위치 위에서 90%
                 xanchor='center',
@@ -155,7 +157,10 @@ app.layout = html.Div([
     # TODO Hover 정보에 percentile_rank() 적용 전 raw_data 출력
     html.Div([
         dcc.Graph(id='radar-chart')
-    ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'margin': '10px auto'}),  # 그래프를 중앙에 배치
+    ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'margin': '10px auto'}),
+
+    # image download 버튼
+    html.Button('Download Image', id='download-button'),
 
     # Checklist
     dcc.Checklist(
@@ -204,8 +209,30 @@ def update_chart(selected_player, selected_team, selected_columns):
         return go.Figure()
 
     chart = RadarChart(player_name=selected_player, team_name=selected_team,
-                       round_number=27, df=df, radar_columns=selected_columns)
+                       round_number=28, df=df, radar_columns=selected_columns)
     return chart.get_figure()
+
+
+@app.callback(
+    Output('download-button', 'n_clicks'),
+    [Input('download-button', 'n_clicks')],
+    [Input('player-dropdown', 'value'),
+     Input('team-dropdown', 'value'),
+     Input('column-checklist', 'value')]
+)
+def download_image(n_clicks, selected_player, selected_team, selected_columns):
+    if n_clicks:
+        # RadarChart 클래스의 인스턴스를 생성하여 데이터를 처리하고 그래프를 생성
+        chart = RadarChart(player_name=selected_player, team_name=selected_team,
+                           round_number=28, df=df, radar_columns=selected_columns)
+        fig = chart.get_figure()
+        fig.update_layout(
+            font=dict(family='MyCustomFont, sans-serif')
+        )
+
+        fig.write_image("output/radar-" + selected_player + ".png")
+
+    return n_clicks
 
 
 if __name__ == '__main__':
