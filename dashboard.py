@@ -50,7 +50,7 @@ app.layout = html.Div([
         ),
     ], style={'width': '540px', 'margin': '20px auto', 'textAlign': 'center'}),
 
-    # TODO '포지션' 정보 추가 및 MF <-> FW 전환 기능
+    # TODO MF <-> FW 전환 기능
     # TODO Hover 정보에 percentile_rank() 적용 전 raw_data 출력
     html.Div([
         dcc.Graph(id='radar-chart')
