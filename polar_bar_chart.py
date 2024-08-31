@@ -181,3 +181,6 @@ class PolarBarChart(object):
         )
 
         return self.fig
+
+    # TODO: The plot has an oversize issue in the top section.
+
