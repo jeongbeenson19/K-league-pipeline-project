@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import rankdata
 
 
-class RadarChart(object):
+class PolarBarChart(object):
     def __init__(self, player_name, team_name, round_number, df, radar_columns):
         self.fig = go.Figure()
         self.teams_division_2 = [
@@ -58,7 +58,7 @@ class RadarChart(object):
                 }],
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgb(0,89,167)',
-                width=540,
+                width=960,
                 height=540,
                 xaxis=dict(
                     showgrid=False,  # x축 그리드 라인 숨기기
@@ -80,16 +80,28 @@ class RadarChart(object):
         values += values[:1]
         categories += categories[:1]
 
-        self.fig.add_trace(go.Scatterpolar(
+        opacities = [
+            0.4 if value <= 30 else
+            0.6 if value <= 70 else
+            0.8 if value <= 90 else 1
+            for value in values
+        ]
+
+        self.fig.add_trace(go.Barpolar(
             r=values,
             theta=categories,
-            fill='toself',
             name=self.player_name,
-            line=dict(color='red')
+            marker=dict(
+                color='#003366',
+                line=dict(
+                    color='#003366'
+                ),
+                opacity=opacities
+            )
         ))
 
         self.fig.update_layout(
-            width=540,
+            width=960,
             height=540,
             polar=dict(
                 bgcolor='rgba(255, 255, 255, 0.1)',
@@ -97,13 +109,14 @@ class RadarChart(object):
                     range=[0, 100],
                 ),
                 angularaxis=dict(
+                    direction='clockwise',
                     showgrid=False,
                 ),
             ),
             plot_bgcolor='rgb(0,22,72)',
             paper_bgcolor='rgb(0,89,167)',
             title=dict(
-                text=f"{self.player_name} Radar Chart ~ {self.round_number} Round",
+                text=f"K LEAGUE Chart",
                 x=0.5,  # 제목 중앙 정렬
                 y=0.95,  # 제목 위치 위에서 90%
                 xanchor='center',
@@ -118,9 +131,53 @@ class RadarChart(object):
                 )
             ),
             font=dict(family='MyCustomFont, sans-serif',
-                      size=10,
+                      size=15,
                       color='white',
-                      )
+                      ),
+            annotations=[
+                go.layout.Annotation(
+                    text=(
+                        f'R o u n d:'
+                        '<br>'
+                        f'N  a  m  e:'
+                        '<br>'
+                        f'T  e  a  m:'
+                        '<br>'
+                        f'Position:'
+                    ),
+                    align='left',
+                    x=0.85,
+                    y=0.9,
+                    xanchor='left',
+                    yanchor='top',
+                    font=dict(
+                        size=17,
+                        family="MyCustomFont, sanserif",
+                        color="white"
+                    )
+                ),
+                go.layout.Annotation(
+                    text=(
+                        f'{self.round_number}라운드'
+                        '<br>'
+                        f'{self.player_name}'
+                        '<br>'
+                        f'{self.team_name}'
+                        '<br>'
+                        f'{self.player_position}'
+                    ),
+                    align='right',
+                    x=1.05,
+                    y=0.9,
+                    xanchor='right',
+                    yanchor='top',
+                    font=dict(
+                        size=17,
+                        family="MyCustomFont, sanserif",
+                        color="white"
+                    )
+                )
+            ]
         )
 
         return self.fig

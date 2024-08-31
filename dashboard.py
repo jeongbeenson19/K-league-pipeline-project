@@ -3,14 +3,13 @@ from dash import dcc, html
 import plotly.graph_objs as go
 from dash.dependencies import Output, Input, State
 import pandas as pd
-from radar_chart import RadarChart
+from polar_bar_chart import PolarBarChart
 
 
-# TODO png로 저장 & HTML로 저장 기능 추가
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
-data = pd.read_csv('data/preprocessed/27-round-preprocessed.csv')
+data = pd.read_csv('data/preprocessed/28-round-preprocessed.csv')
 
 df = pd.DataFrame(data)
 
@@ -57,12 +56,6 @@ app.layout = html.Div([
         dcc.Graph(id='radar-chart')
     ], style={'display': 'flex', 'justify-content': 'center', 'align-items': 'center', 'margin': '10px auto'}),
 
-    # image download 버튼
-    html.Div([
-        html.Button('Download Image', id='download-button'),
-    ], style={'display': 'flex', 'align-items': 'center', 'justifyContent': 'center', 'margin': '10px'}),
-
-
     # Checklist
     dcc.Checklist(
         id='column-checklist',
@@ -77,30 +70,6 @@ app.layout = html.Div([
         }
     ),
 ])
-
-# TODO Scatter chart 추가
-
-
-@app.callback(
-    Output('download-button', 'n_clicks'),
-    [Input('download-button', 'n_clicks')],
-    [Input('player-dropdown', 'value'),
-     Input('team-dropdown', 'value'),
-     Input('column-checklist', 'value')]
-)
-def download_image(n_clicks, selected_player, selected_team, selected_columns):
-    if n_clicks:
-        # RadarChart 클래스의 인스턴스를 생성하여 데이터를 처리하고 그래프를 생성
-        chart = RadarChart(player_name=selected_player, team_name=selected_team,
-                           round_number=28, df=df, radar_columns=selected_columns)
-        fig = chart.get_figure()
-        fig.update_layout(
-            font=dict(family='MyCustomFont, sans-serif')
-        )
-
-        fig.write_image("output/radar-" + selected_player + ".png")
-
-    return n_clicks
 
 
 @app.callback(
@@ -157,7 +126,7 @@ def update_chart(selected_round, selected_player, selected_team, selected_column
             }],
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgb(0,89,167)',
-            width=540,
+            width=960,
             height=540,
             xaxis=dict(
                 showgrid=False,  # x축 그리드 라인 숨기기
@@ -176,8 +145,10 @@ def update_chart(selected_round, selected_player, selected_team, selected_column
     df = pd.read_csv(f'data/preprocessed/{selected_round}-round-preprocessed.csv')
 
     # RadarChart 클래스의 인스턴스를 생성하여 데이터를 처리하고 그래프를 생성
-    chart = RadarChart(player_name=selected_player, team_name=selected_team,
-                       round_number=selected_round, df=df, radar_columns=selected_columns)
+    chart = PolarBarChart(
+        player_name=selected_player, team_name=selected_team,round_number=selected_round,
+        df=df, radar_columns=selected_columns
+    )
     return chart.get_figure()
 
 
