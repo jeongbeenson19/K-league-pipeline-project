@@ -127,7 +127,7 @@ def update_chart(selected_round, selected_player, selected_team, selected_column
             }],
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgb(0,89,167)',
-            width=540,
+            width=960,
             height=540,
             xaxis=dict(
                 showgrid=False,  # x축 그리드 라인 숨기기
