@@ -9,8 +9,9 @@ from polar_bar_chart import PolarBarChart
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
-data = pd.read_csv('data/preprocessed/28-round-preprocessed.csv')
+RECENTLY_UPDATED_ROUND = 29
 
+data = pd.read_csv(f'data/preprocessed/{RECENTLY_UPDATED_ROUND}-round-preprocessed.csv')
 df = pd.DataFrame(data)
 
 app.layout = html.Div([
@@ -43,9 +44,9 @@ app.layout = html.Div([
         dcc.Slider(
             id='round-slider',
             min=20,
-            max=28,  # 예시로 1~38 라운드 설정
-            value=28,  # 기본값으로 27라운드 설정
-            marks={i: str(i) for i in range(20, 29)},
+            max=RECENTLY_UPDATED_ROUND,  # 예시로 1~38 라운드 설정
+            value=RECENTLY_UPDATED_ROUND,  # 기본값으로 27라운드 설정
+            marks={i: str(i) for i in range(20, RECENTLY_UPDATED_ROUND + 1)},
             step=1,
         ),
     ], style={'width': '540px', 'margin': '20px auto', 'textAlign': 'center'}),
@@ -126,7 +127,7 @@ def update_chart(selected_round, selected_player, selected_team, selected_column
             }],
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgb(0,89,167)',
-            width=960,
+            width=540,
             height=540,
             xaxis=dict(
                 showgrid=False,  # x축 그리드 라인 숨기기
@@ -145,10 +146,8 @@ def update_chart(selected_round, selected_player, selected_team, selected_column
     df = pd.read_csv(f'data/preprocessed/{selected_round}-round-preprocessed.csv')
 
     # RadarChart 클래스의 인스턴스를 생성하여 데이터를 처리하고 그래프를 생성
-    chart = PolarBarChart(
-        player_name=selected_player, team_name=selected_team,round_number=selected_round,
-        df=df, radar_columns=selected_columns
-    )
+    chart = PolarBarChart(player_name=selected_player, team_name=selected_team,
+                          round_number=selected_round, df=df, radar_columns=selected_columns)
     return chart.get_figure()
 
 
