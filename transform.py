@@ -183,5 +183,5 @@ def preprocessing(round_number):
     merged_df.to_csv(output_preprocessed_file, index=False)
     print(f"Data has been written to {output_preprocessed_file}")
 
-    # 두 가지 데이터 프레임으로 리턴
+    # 데이터 프레임으로 리턴
     return merged_df
