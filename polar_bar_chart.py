@@ -77,10 +77,6 @@ class PolarBarChart(object):
             categories = self.radar_columns
             values = self.target_df.values.flatten().tolist()
 
-            # Close the loop
-            values += values[:1]
-            categories += categories[:1]
-
             opacities = [
                 0.4 if value <= 30 else
                 0.6 if value <= 70 else
