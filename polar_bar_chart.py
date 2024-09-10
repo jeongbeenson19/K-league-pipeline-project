@@ -73,114 +73,113 @@ class PolarBarChart(object):
             )
             return self.fig
 
-        categories = self.radar_columns
-        values = self.target_df.values.flatten().tolist()
+        else:
+            categories = self.radar_columns
+            values = self.target_df.values.flatten().tolist()
 
-        # Close the loop
-        values += values[:1]
-        categories += categories[:1]
+            # Close the loop
+            values += values[:1]
+            categories += categories[:1]
 
-        opacities = [
-            0.4 if value <= 30 else
-            0.6 if value <= 70 else
-            0.8 if value <= 90 else 1
-            for value in values
-        ]
-
-        self.fig.add_trace(go.Barpolar(
-            r=values,
-            theta=categories,
-            name=self.player_name,
-            marker=dict(
-                color='#003366',
-                line=dict(
-                    color='#003366'
-                ),
-                opacity=opacities
-            )
-        ))
-
-        self.fig.update_layout(
-            width=960,
-            height=540,
-            polar=dict(
-                bgcolor='rgba(255, 255, 255, 0.1)',
-                radialaxis=dict(
-                    range=[0, 100],
-                ),
-                angularaxis=dict(
-                    direction='clockwise',
-                    showgrid=False,
-                ),
-            ),
-            plot_bgcolor='rgb(0,22,72)',
-            paper_bgcolor='rgb(0,89,167)',
-            title=dict(
-                text=f"K LEAGUE Chart",
-                x=0.5,  # 제목 중앙 정렬
-                y=0.95,  # 제목 위치 위에서 90%
-                xanchor='center',
-                yanchor='top',
-                font=dict(
-                    size=25,
-                    family="MyCustomFont, sans-serif",
-                    color="white"  # 제목 색상 변경
-                ),
-                pad=dict(
-                    b=30,
-                )
-            ),
-            font=dict(family='MyCustomFont, sans-serif',
-                      size=15,
-                      color='white',
-                      ),
-            annotations=[
-                go.layout.Annotation(
-                    text=(
-                        f'R o u n d:'
-                        '<br>'
-                        f'N  a  m  e:'
-                        '<br>'
-                        f'T  e  a  m:'
-                        '<br>'
-                        f'Position:'
-                    ),
-                    align='left',
-                    x=0.85,
-                    y=0.9,
-                    xanchor='left',
-                    yanchor='top',
-                    font=dict(
-                        size=17,
-                        family="MyCustomFont, sanserif",
-                        color="white"
-                    )
-                ),
-                go.layout.Annotation(
-                    text=(
-                        f'{self.round_number}라운드'
-                        '<br>'
-                        f'{self.player_name}'
-                        '<br>'
-                        f'{self.team_name}'
-                        '<br>'
-                        f'{self.player_position}'
-                    ),
-                    align='right',
-                    x=1.05,
-                    y=0.9,
-                    xanchor='right',
-                    yanchor='top',
-                    font=dict(
-                        size=17,
-                        family="MyCustomFont, sanserif",
-                        color="white"
-                    )
-                )
+            opacities = [
+                0.4 if value <= 30 else
+                0.6 if value <= 70 else
+                0.8 if value <= 90 else 1
+                for value in values
             ]
-        )
 
-        return self.fig
+            self.fig.add_trace(go.Barpolar(
+                r=values,
+                theta=categories,
+                name=self.player_name,
+                marker=dict(
+                    color='#003366',
+                    line=dict(
+                        color='#003366'
+                    ),
+                    opacity=opacities
+                )
+            ))
 
-    # TODO: The plot has an oversize issue in the top section.
+            self.fig.update_layout(
+                width=960,
+                height=540,
+                polar=dict(
+                    bgcolor='rgba(255, 255, 255, 0.1)',
+                    radialaxis=dict(
+                        range=[0, 100],
+                    ),
+                    angularaxis=dict(
+                        direction='clockwise',
+                        showgrid=False,
+                        rotation=0
+                    ),
+                ),
+                plot_bgcolor='rgb(0,22,72)',
+                paper_bgcolor='rgb(0,89,167)',
+                title=dict(
+                    text=f"K LEAGUE Chart",
+                    x=0.5,  # 제목 중앙 정렬
+                    y=0.95,  # 제목 위치 위에서 90%
+                    xanchor='center',
+                    yanchor='top',
+                    font=dict(
+                        size=25,
+                        family="MyCustomFont, sans-serif",
+                        color="white"  # 제목 색상 변경
+                    ),
+                    pad=dict(
+                        b=30,
+                    )
+                ),
+                font=dict(family='MyCustomFont, sans-serif',
+                          size=15,
+                          color='white',
+                          ),
+                annotations=[
+                    go.layout.Annotation(
+                        text=(
+                            f'R o u n d:'
+                            '<br>'
+                            f'N  a  m  e:'
+                            '<br>'
+                            f'T  e  a  m:'
+                            '<br>'
+                            f'Position:'
+                        ),
+                        align='left',
+                        x=0.85,
+                        y=0.9,
+                        xanchor='left',
+                        yanchor='top',
+                        font=dict(
+                            size=17,
+                            family="MyCustomFont, sanserif",
+                            color="white"
+                        )
+                    ),
+                    go.layout.Annotation(
+                        text=(
+                            f'{self.round_number}라운드'
+                            '<br>'
+                            f'{self.player_name}'
+                            '<br>'
+                            f'{self.team_name}'
+                            '<br>'
+                            f'{self.player_position}'
+                        ),
+                        align='right',
+                        x=1.05,
+                        y=0.9,
+                        xanchor='right',
+                        yanchor='top',
+                        font=dict(
+                            size=17,
+                            family="MyCustomFont, sanserif",
+                            color="white"
+                        )
+                    )
+                ]
+            )
 
+            return self.fig
