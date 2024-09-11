@@ -83,6 +83,4 @@ def data_center(round_number):
         writer = csv.writer(file)
         writer.writerow(columns)  # 컬럼 이름 작성
         writer.writerows(data[1:])  # 데이터 작성
-
-
-data_center(29)
+    print(f"Saved data to {output_file}")
