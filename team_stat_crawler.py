@@ -18,7 +18,7 @@ def data_center(round_number):
 
     # 추출할 컬럼 설정
     data = [
-        "년도,선수명,구단,포지션,등번호,출전시간(분),"
+        "년도,구단,"
         "득점,도움,슈팅,유효 슈팅,블락된슈팅,벗어난슈팅,PA내 슈팅,PA외 슈팅,"
         "프리킥 슈팅, 프리킥 유효슈팅, 프리킥 크로스 시도, 프리킥 크로스 성공, 프리킥 크로스 성공%,"
         "오프사이드,코너킥,스로인,"
@@ -60,12 +60,10 @@ def data_center(round_number):
         table = soup.find('table')
 
         if table:  # 테이블이 존재하는 경우에만 처리
-            team_name = soup.find('p', id='txtTeamName').text
             rows = table.find_all('tr')
             for row in rows[2:-1]:
                 cols = row.find_all(['td', 'th'])  # 'td'와 'th' 모두 찾기
                 cols = [ele.text.strip() for ele in cols]  # 텍스트를 추출하고 공백 제거
-                cols.insert(2, team_name)
                 data.append(cols)
 
     except NoSuchElementException as e:
