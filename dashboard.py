@@ -9,7 +9,7 @@ from polar_bar_chart import PolarBarChart
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
-RECENTLY_UPDATED_ROUND = 29
+RECENTLY_UPDATED_ROUND = 30
 
 data = pd.read_csv(f'data/preprocessed/{RECENTLY_UPDATED_ROUND}-round-preprocessed.csv')
 df = pd.DataFrame(data)
