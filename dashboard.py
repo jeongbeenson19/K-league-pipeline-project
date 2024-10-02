@@ -4,12 +4,15 @@ import plotly.graph_objs as go
 from dash.dependencies import Output, Input, State
 import pandas as pd
 from polar_bar_chart import PolarBarChart
+from transform import preprocessing
 
 
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
-RECENTLY_UPDATED_ROUND = 30
+RECENTLY_UPDATED_ROUND = 32
+
+updated_round_detect = preprocessing(RECENTLY_UPDATED_ROUND)
 
 data = pd.read_csv(f'data/preprocessed/{RECENTLY_UPDATED_ROUND}-round-preprocessed.csv')
 df = pd.DataFrame(data)
