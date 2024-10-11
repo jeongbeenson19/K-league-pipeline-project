@@ -10,7 +10,7 @@ from transform import preprocessing
 # Dash 애플리케이션 생성
 app = dash.Dash(__name__)
 
-RECENTLY_UPDATED_ROUND = 32
+RECENTLY_UPDATED_ROUND = 33
 
 updated_round_detect = preprocessing(RECENTLY_UPDATED_ROUND)
 
