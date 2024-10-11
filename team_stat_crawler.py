@@ -2,12 +2,16 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+import re
 import csv
 import os
 import time
 
-DELAY = 5
+from selenium.webdriver.support.wait import WebDriverWait
+
+DELAY = 2
 chrome_options = webdriver.ChromeOptions()
 # chrome_options.add_argument("--headless")
 driver = webdriver.Chrome(options=chrome_options)
@@ -18,7 +22,7 @@ def data_center(round_number):
     # TODO: 추출할 컬럼 재정의
     # 추출할 컬럼 설정
     data = [
-        "구단,상대,점유율,패스,키패스,공격진영 패스,중앙지역 패스,수비진영 패스,롱패스,중거리패스,단거리패스,전방패스,횡패스,후방패스,크로스,패스성공률(%)"
+        "구단,상대,점유율,패스성공률(%),패스,키패스,공격진영 패스,중앙지역 패스,수비진영 패스,롱패스,중거리패스,단거리패스,전방패스,횡패스,후방패스,크로스"
     ]
     columns = data[0].split(",")  # 컬럼 이름을 분리
 
@@ -81,21 +85,39 @@ def data_center(round_number):
                     span_text.pop(1)
                     team_data_home.append(span_text[0].text)
                     team_data_away.append(span_text[1].text)
-                    print(f"Crawled data from {match_num} of {round_num} Round")
+
+                    button = WebDriverWait(driver, 10).until(
+                        EC.element_to_be_clickable(
+                            (By.XPATH, '//*[@id="msForm"]/div[2]/div[1]/div/div/ul/li[7]/div/div[3]/button'))
+                    )
+                    button.click()
+                    pass_element = driver.find_elements(By.CLASS_NAME, 'match-summary-btn-txtBox-detail')
+                    pass_text = pass_element[0].text
+                    pass_text = re.findall(r'\((\d{2})\)', pass_text)
+                    team_data_home.append(pass_text[0])
+                    team_data_away.append(pass_text[1])
+                    print(team_data_home)
+                    print(team_data_away)
+
                     driver.execute_script("moveMainFrameMc('0297')")
-                    data1 = driver.find_element(By.XPATH, '//*[@id="highcharts-26"]/div[2]/div[12]/span/span')
-                    print(data1.text)
-                    for div_num in range(1, 13):
-                        home_pass_data = driver.find_element(
-                            By.XPATH, f'//*[@id="highcharts-26"]/div[2]/div[{div_num}]/span/span')
-                        print(home_pass_data.text)
-                        team_data_home.append(home_pass_data.text)
+
+                    time.sleep(DELAY)
+                    for label in range(1, 13):
+                        teamstats_label = driver.find_element(
+                            By.XPATH, f'//*[@id="highcharts-26"]/div[2]/div[{label}]/span/span'
+                        )
+                        team_data_home.append(teamstats_label.text)
+
+                    time.sleep(DELAY)
+                    for label in range(1, 13):
+                        teamstats_label = driver.find_element(
+                            By.XPATH, f'//*[@id="highcharts-26"]/div[3]/div[{label}]/span/span'
+                        )
+                        team_data_away.append(teamstats_label.text)
 
                     data.append(team_data_home)
                     data.append(team_data_away)
-                    print(data)
-
-                    # TODO: 패스 데이터 크롤링
+                    print(f"Crawled data from {match_num} of {round_num} Round")
 
                 match_element = driver.find_element(By.ID, 'selGameId')
                 match_ = Select(match_element)
