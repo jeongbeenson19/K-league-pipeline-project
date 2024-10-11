@@ -24,7 +24,6 @@ def preprocessing(round_number):
     # CSV 파일 경로
     input_data_file = f'data/{round_number}-round-data.csv'
     input_xg_file = f'data/{round_number}-round-xg.csv'
-    input_team_data_file = f'data/{round_number}-round-team-data.csv'
     output_preprocessed_file = f'data/preprocessed/{round_number}-round-preprocessed.csv'
 
     # 파일이 존재하는지 확인
@@ -38,14 +37,8 @@ def preprocessing(round_number):
         import xG_crawler
         xG = xG_crawler.xg_crawler(round_number=round_number)
 
-    if not os.path.exists(input_team_data_file):
-        print(f"Input team data files for round {round_number} do not exist. Crawling data")
-        import team_stat_crawler
-        team_stat = team_stat_crawler.data_center(round_number=round_number)
-
     data = pd.read_csv(input_data_file)
     xg_data = pd.read_csv(input_xg_file)
-    team_data = pd.read_csv(input_team_data_file)
     df = pd.DataFrame(data)
 
     # 드리블 성공% 및 패스 성공% 등 퍼센트 컬럼에 대해서는 따로 처리하지 않음
@@ -186,14 +179,6 @@ def preprocessing(round_number):
 
     merged_df = merged_df.fillna(0)  # NaN 값을 0으로 대체
 
-    team_df = team_data.iloc[:25]
-
-    # HTML에서 추출된 문자열로 이루어진 데이터를 정수형으로 변환
-    for col in team_df.columns:
-        if col not in percent_columns:
-            team_df.loc[:, col] = team_df[col].apply(convert_to_int)
-
-    team_df.to_csv(input_team_data_file, index=False)
     # 합쳐진 데이터 저장
     merged_df.to_csv(output_preprocessed_file, index=False)
     print(f"Data has been written to {output_preprocessed_file}")
