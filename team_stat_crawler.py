@@ -1,131 +1,151 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from bs4 import BeautifulSoup
 import re
-import csv
 import os
-import time
+import numpy as np
+import pandas as pd
 
-from selenium.webdriver.support.wait import WebDriverWait
+DELAY = 15  # 최대 대기 시간 (초)
+MEET_YEAR = 2
+SEQ = 1
 
-DELAY = 2
 chrome_options = webdriver.ChromeOptions()
 # chrome_options.add_argument("--headless")
 driver = webdriver.Chrome(options=chrome_options)
 driver.get(os.environ.get("K_LEAGUE_DATA_PORTAL"))
 
+wait = WebDriverWait(driver, DELAY)
 
-def data_center(round_number):
-    # TODO: 추출할 컬럼 재정의
-    # 추출할 컬럼 설정
+def data_center(meet_year, seq):
     data = [
-        "구단,상대,점유율,패스성공률(%),패스,키패스,공격진영 패스,중앙지역 패스,수비진영 패스,롱패스,중거리패스,단거리패스,전방패스,횡패스,후방패스,크로스"
+        ["년도", "라운드", "구단", "감독", "상대", "점유율", "패스성공률(%)", "패스 성공", "키패스", "공격진영 패스",
+         "중앙지역 패스", "수비진영 패스", "롱패스", "중거리패스", "단거리패스", "전방패스", "횡패스", "후방패스", "크로스"]
     ]
-    columns = data[0].split(",")  # 컬럼 이름을 분리
 
     try:
-        # K 리그 데이터 포털 데이터 센터 접속
         print("Connecting to data center...")
         driver.execute_script("moveMainFrame('0011');")
 
         print("Connecting to Match Center...")
-        round_element = driver.find_element(By.ID, 'selRoundId')  # 라운드 요소 선택
-        round_ = Select(round_element)
-        rounds = round_.options
+        year_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetYear')))
+        year_select = Select(year_element)
+        year_select.select_by_index(MEET_YEAR)
 
-        # 라운드 선택 반복문
+        print("Selecting Match Year")
+        seq_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetSeq')))
+        seq_select = Select(seq_element)
+        seq_select.select_by_index(SEQ)
+
+        round_element = wait.until(EC.presence_of_element_located((By.ID, 'selRoundId')))
+        round_select = Select(round_element)
+        rounds = round_select.options
+        print("Selecting Match Round")
+
         for round_num in range(1, len(rounds)):
-            time.sleep(DELAY)
-            round_.select_by_index(round_num)
 
-            match_element = driver.find_element(By.ID, 'selGameId')
-            match_ = Select(match_element)
-            matches = match_.options
+            round_element = wait.until(EC.element_to_be_clickable((By.ID, 'selRoundId')))
+            round_select = Select(round_element)
+            round_select.select_by_index(round_num)
 
-            # 경기 선택 반복문
+            match_element = wait.until(EC.presence_of_element_located((By.ID, 'selGameId')))
+            match_select = Select(match_element)
+            matches = match_select.options
+
             for match_num in range(1, len(matches)):
-                team_data_home = []  # 데이터 초기화
+                team_data_home = []
                 team_data_away = []
-                time.sleep(DELAY)
-                match_.select_by_index(match_num)
+
+                match_element = wait.until(EC.element_to_be_clickable((By.ID, 'selGameId')))
+                match_select = Select(match_element)
+                match_select.select_by_index(match_num)
+
                 driver.execute_script("moveMainFrame('0013');")  # Match Summary
 
-                time.sleep(DELAY)
-                round_element = driver.find_element(By.ID, 'selRoundId')  # 라운드 요소 선택
-                round_ = Select(round_element)
-                round_.select_by_index(round_num)
-                time.sleep(DELAY)
-                match_element = driver.find_element(By.ID, 'selGameId')
-                match_ = Select(match_element)
-                match_.select_by_index(match_num)
+                year_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetYear')))
+                year_select = Select(year_element)
+                year_select.select_by_index(MEET_YEAR)
 
-                time.sleep(DELAY)
-                print(f"Get data from {match_num} of {round_num} Round")
+                print("Selecting Match Year")
+                seq_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetSeq')))
+                seq_select = Select(seq_element)
+                print(seq_element)
+                seq_select.select_by_index(1)
+
+                # 라운드 재설정
+                round_element = wait.until(EC.element_to_be_clickable((By.ID, 'selRoundId')))
+                round_select = Select(round_element)
+                round_select.select_by_index(round_num)
+
+                # 경기 재설정
+                match_element = wait.until(EC.element_to_be_clickable((By.ID, 'selGameId')))
+                match_select = Select(match_element)
+                match_select.select_by_index(match_num)
+
+                print(f"Get data from match {match_num} of round {round_num}")
+                wait.until(EC.presence_of_element_located((By.TAG_NAME, 'table')))
                 html = driver.page_source
                 soup = BeautifulSoup(html, 'html.parser')
                 table = soup.find('table')
 
-                # TODO: 점유율 데이터 크롤링
-                if table:  # 테이블이 존재하는 경우에만 처리
-                    home_team_name = driver.find_element(By.CLASS_NAME, 'main-soccer-teamName-txt')
-                    away_team_name = driver.find_element(By.CLASS_NAME, 'main-soccer-teamName-txt01')
-                    team_data_home.append(home_team_name.text)
-                    team_data_away.append(away_team_name.text)
-                    team_data_home.append(away_team_name.text)
-                    team_data_away.append(home_team_name.text)
+                if table:
+                    print("Table found")
+                    home_team_name = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'main-soccer-teamName-txt')))
+                    away_team_name = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'main-soccer-teamName-txt01')))
+                    managers = driver.find_elements(By.CSS_SELECTOR, '.main-soccer-txt02.mt5')
 
-                    # data-idx="5"인 div 태그를 찾기
-                    div_element = driver.find_element(By.CSS_SELECTOR, 'div.match-summary-btn-txtBox[data-idx="5"]')
+                    team_data_home.extend([meet_year, round_num, home_team_name.text, managers[0].text.strip(), away_team_name.text])
+                    team_data_away.extend([meet_year, round_num, away_team_name.text, managers[1].text.strip(), home_team_name.text])
+                    print(team_data_home)
+                    print(team_data_away)
 
-                    # 그 안의 span 태그에 있는 텍스트 추출
+                    div_element = wait.until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'div.match-summary-btn-txtBox[data-idx="5"]'))
+                    )
                     span_text = div_element.find_elements(By.TAG_NAME, 'span')
                     span_text.pop(1)
                     team_data_home.append(span_text[0].text)
                     team_data_away.append(span_text[1].text)
 
-                    button = WebDriverWait(driver, 10).until(
-                        EC.element_to_be_clickable(
-                            (By.XPATH, '//*[@id="msForm"]/div[2]/div[1]/div/div/ul/li[7]/div/div[3]/button'))
+                    button = wait.until(
+                        EC.element_to_be_clickable((By.XPATH, '//*[@id="msForm"]/div[2]/div[1]/div/div/ul/li[7]/div/div[3]/button'))
                     )
                     button.click()
-                    pass_element = driver.find_elements(By.CLASS_NAME, 'match-summary-btn-txtBox-detail')
+                    print('clicked button')
+
+                    pass_element = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'match-summary-btn-middle-detail')))
                     pass_text = pass_element[0].text
+                    print(pass_text)
                     pass_text = re.findall(r'\((\d{2})\)', pass_text)
+                    print(pass_text)
                     team_data_home.append(pass_text[0])
                     team_data_away.append(pass_text[1])
-                    print(team_data_home)
-                    print(team_data_away)
 
                     driver.execute_script("moveMainFrameMc('0297')")
 
-                    time.sleep(DELAY)
                     for label in range(1, 13):
-                        teamstats_label = driver.find_element(
-                            By.XPATH, f'//*[@id="highcharts-26"]/div[2]/div[{label}]/span/span'
+                        teamstats_label = wait.until(
+                            EC.presence_of_element_located(
+                                (By.XPATH, f'//*[@id="highcharts-26"]/div[2]/div[{label}]/span/span')
+                            )
                         )
                         team_data_home.append(teamstats_label.text)
 
-                    time.sleep(DELAY)
                     for label in range(1, 13):
-                        teamstats_label = driver.find_element(
-                            By.XPATH, f'//*[@id="highcharts-26"]/div[3]/div[{label}]/span/span'
+                        teamstats_label = wait.until(
+                            EC.presence_of_element_located(
+                                (By.XPATH, f'//*[@id="highcharts-26"]/div[3]/div[{label}]/span/span')
+                            )
                         )
                         team_data_away.append(teamstats_label.text)
 
                     data.append(team_data_home)
                     data.append(team_data_away)
-                    print(f"Crawled data from {match_num} of {round_num} Round")
+                    print(f"Crawled data from match {match_num} of round {round_num}")
 
-                match_element = driver.find_element(By.ID, 'selGameId')
-                match_ = Select(match_element)
-
-            round_element = driver.find_element(By.ID, 'selRoundId')  # 라운드 요소 선택
-            round_ = Select(round_element)
-
-    # 예외처리
     except NoSuchElementException as e:
         print(f"No such element: {e}")
     except TimeoutException as e:
@@ -135,13 +155,22 @@ def data_center(round_number):
     finally:
         driver.quit()
 
-    # csv파일로 저장
-    output_file = f"data/{round_number}-round-team-data.csv"
-    with open(output_file, mode='w', newline='', encoding='utf-8-sig') as file:
-        writer = csv.writer(file)
-        writer.writerow(columns)  # 컬럼 이름 작성
-        writer.writerows(data[1:])  # 데이터 작성
+    # 데이터프레임 변환
+    df = pd.DataFrame(data[1:], columns=data[0])
+
+    # 숫자형 변환 (필요한 컬럼)
+    numeric_cols = ['패스 성공', '패스성공률(%)', '공격진영 패스', '단거리패스', '전방패스']
+    for col in numeric_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    df['패스'] = np.floor(df['패스 성공'] / (df['패스성공률(%)'] / 100))
+    df['공격진영 패스 비율'] = df['공격진영 패스'] / df['패스']
+    df['단거리패스 비율'] = df['단거리패스'] / df['패스']
+    df['전방패스 비율'] = df['전방패스'] / df['패스']
+
+    output_file = f"data/{meet_year}-{seq}-team-data.csv"
+    df.to_csv(output_file, index=False, encoding='utf-8-sig')
     print(f"Saved data to {output_file}")
 
 
-data_center(32)
+data_center(2024, '하나은행 K리그1')
