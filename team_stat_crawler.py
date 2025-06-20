@@ -6,12 +6,14 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from bs4 import BeautifulSoup
 import re
 import os
+import time
 import numpy as np
 import pandas as pd
 
+FIXED_DELAY = 3
 DELAY = 15  # 최대 대기 시간 (초)
 MEET_YEAR = 2
-SEQ = 1
+SEQ = 2
 
 chrome_options = webdriver.ChromeOptions()
 # chrome_options.add_argument("--headless")
@@ -34,19 +36,21 @@ def data_center(meet_year, seq):
         year_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetYear')))
         year_select = Select(year_element)
         year_select.select_by_index(MEET_YEAR)
+        time.sleep(FIXED_DELAY)
 
         print("Selecting Match Year")
         seq_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetSeq')))
         seq_select = Select(seq_element)
         seq_select.select_by_index(SEQ)
+        time.sleep(FIXED_DELAY)
 
         round_element = wait.until(EC.presence_of_element_located((By.ID, 'selRoundId')))
         round_select = Select(round_element)
         rounds = round_select.options
         print("Selecting Match Round")
 
-        for round_num in range(1, len(rounds)):
-
+        for round_num in range(40, len(rounds)):
+            time.sleep(FIXED_DELAY)
             round_element = wait.until(EC.element_to_be_clickable((By.ID, 'selRoundId')))
             round_select = Select(round_element)
             round_select.select_by_index(round_num)
@@ -56,6 +60,7 @@ def data_center(meet_year, seq):
             matches = match_select.options
 
             for match_num in range(1, len(matches)):
+                time.sleep(FIXED_DELAY)
                 team_data_home = []
                 team_data_away = []
 
@@ -73,7 +78,7 @@ def data_center(meet_year, seq):
                 seq_element = wait.until(EC.presence_of_element_located((By.ID, 'selMeetSeq')))
                 seq_select = Select(seq_element)
                 print(seq_element)
-                seq_select.select_by_index(1)
+                seq_select.select_by_index(SEQ)
 
                 # 라운드 재설정
                 round_element = wait.until(EC.element_to_be_clickable((By.ID, 'selRoundId')))
@@ -111,40 +116,68 @@ def data_center(meet_year, seq):
                     team_data_away.append(span_text[1].text)
 
                     button = wait.until(
-                        EC.element_to_be_clickable((By.XPATH, '//*[@id="msForm"]/div[2]/div[1]/div/div/ul/li[7]/div/div[3]/button'))
+                        EC.element_to_be_clickable(
+                            (By.XPATH, '//*[@id="msForm"]/div[2]/div[1]/div/div/ul/li[7]/div/div[3]/button'))
                     )
                     button.click()
                     print('clicked button')
 
-                    pass_element = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, 'match-summary-btn-middle-detail')))
-                    pass_text = pass_element[0].text
-                    print(pass_text)
-                    pass_text = re.findall(r'\((\d{2})\)', pass_text)
-                    print(pass_text)
-                    team_data_home.append(pass_text[0])
-                    team_data_away.append(pass_text[1])
+                    try:
+                        pass_element = wait.until(
+                            EC.presence_of_all_elements_located((By.CLASS_NAME, 'match-summary-btn-middle-detail')))
+                        pass_text = pass_element[0].text
+                        print("원본 pass_text:", pass_text)
+                        pass_text = re.findall(r'\((\d{2})\)', pass_text)
+                        print("추출된 pass_text 리스트:", pass_text)
+
+                        if len(pass_text) >= 2:
+                            team_data_home.append(pass_text[0])
+                            team_data_away.append(pass_text[1])
+                        else:
+                            print("❗ 패스 관련 수치가 부족합니다. None으로 채웁니다.")
+                            team_data_home.append(None)
+                            team_data_away.append(None)
+
+                    except (IndexError, TimeoutException) as e:
+                        print(f"❗ 패스 데이터 추출 중 오류 발생: {e}")
+                        team_data_home.append(None)
+                        team_data_away.append(None)
 
                     driver.execute_script("moveMainFrameMc('0297')")
 
                     for label in range(1, 13):
+                        xpath = f'/html/body/div[1]/div[6]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/div[2]/div[{label}]/span/span'
                         teamstats_label = wait.until(
-                            EC.presence_of_element_located(
-                                (By.XPATH, f'//*[@id="highcharts-26"]/div[2]/div[{label}]/span/span')
-                            )
+                            EC.presence_of_element_located((By.XPATH, xpath))
                         )
-                        team_data_home.append(teamstats_label.text)
+
+                        # text가 비어있지 않을 때까지 대기
+                        WebDriverWait(driver, 10).until(
+                            lambda d: driver.execute_script("return arguments[0].textContent",
+                                                            teamstats_label).strip() != '')
+
+                        stat_text = driver.execute_script("return arguments[0].textContent", teamstats_label).strip()
+                        team_data_home.append(stat_text)
+                    data.append(team_data_home)
 
                     for label in range(1, 13):
+                        xpath = f'/html/body/div[1]/div[6]/div[2]/div[2]/div[1]/div[2]/div[2]/div[1]/div[3]/div[{label}]/span/span'
                         teamstats_label = wait.until(
-                            EC.presence_of_element_located(
-                                (By.XPATH, f'//*[@id="highcharts-26"]/div[3]/div[{label}]/span/span')
-                            )
+                            EC.presence_of_element_located((By.XPATH, xpath))
                         )
-                        team_data_away.append(teamstats_label.text)
 
-                    data.append(team_data_home)
+                        WebDriverWait(driver, 10).until(
+                            lambda d: driver.execute_script("return arguments[0].textContent",
+                                                            teamstats_label).strip() != '')
+
+                        stat_text = driver.execute_script("return arguments[0].textContent", teamstats_label).strip()
+                        team_data_away.append(stat_text)
                     data.append(team_data_away)
                     print(f"Crawled data from match {match_num} of round {round_num}")
+                    print(team_data_home)
+                else:
+                    print(f"No table founded")
+                    break
 
     except NoSuchElementException as e:
         print(f"No such element: {e}")
@@ -163,7 +196,8 @@ def data_center(meet_year, seq):
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    df['패스'] = np.floor(df['패스 성공'] / (df['패스성공률(%)'] / 100))
+    df['패스성공률(%)'] = df['패스성공률(%)'] / 100
+    df['패스'] = np.floor(df['패스 성공'] / (df['패스성공률(%)']))
     df['공격진영 패스 비율'] = df['공격진영 패스'] / df['패스']
     df['단거리패스 비율'] = df['단거리패스'] / df['패스']
     df['전방패스 비율'] = df['전방패스'] / df['패스']
@@ -173,4 +207,4 @@ def data_center(meet_year, seq):
     print(f"Saved data to {output_file}")
 
 
-data_center(2024, '하나은행 K리그1')
+data_center(2024, '하나은행 K리그2-40')
