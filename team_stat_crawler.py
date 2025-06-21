@@ -12,8 +12,8 @@ import pandas as pd
 
 FIXED_DELAY = 3
 DELAY = 15  # 최대 대기 시간 (초)
-MEET_YEAR = 2
-SEQ = 2
+MEET_YEAR = 3
+SEQ = 1
 
 chrome_options = webdriver.ChromeOptions()
 # chrome_options.add_argument("--headless")
@@ -49,7 +49,7 @@ def data_center(meet_year, seq):
         rounds = round_select.options
         print("Selecting Match Round")
 
-        for round_num in range(40, len(rounds)):
+        for round_num in range(37, len(rounds)):
             time.sleep(FIXED_DELAY)
             round_element = wait.until(EC.element_to_be_clickable((By.ID, 'selRoundId')))
             round_select = Select(round_element)
@@ -207,4 +207,4 @@ def data_center(meet_year, seq):
     print(f"Saved data to {output_file}")
 
 
-data_center(2024, '하나은행 K리그2-40')
+data_center(2023, '하나은행 K리그1-37')
