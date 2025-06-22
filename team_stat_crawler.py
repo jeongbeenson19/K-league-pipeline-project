@@ -12,7 +12,7 @@ import pandas as pd
 
 FIXED_DELAY = 3
 DELAY = 15  # 최대 대기 시간 (초)
-MEET_YEAR = 3
+MEET_YEAR = 2
 SEQ = 1
 
 chrome_options = webdriver.ChromeOptions()
@@ -24,7 +24,7 @@ wait = WebDriverWait(driver, DELAY)
 
 def data_center(meet_year, seq):
     data = [
-        ["년도", "라운드", "구단", "감독", "상대", "점유율", "패스성공률(%)", "패스 성공", "키패스", "공격진영 패스",
+        ["년도", "라운드", "구단", "감독", "상대", "득점", "실점", "점유율", "패스성공률(%)", "패스 성공", "키패스", "공격진영 패스",
          "중앙지역 패스", "수비진영 패스", "롱패스", "중거리패스", "단거리패스", "전방패스", "횡패스", "후방패스", "크로스"]
     ]
 
@@ -49,7 +49,7 @@ def data_center(meet_year, seq):
         rounds = round_select.options
         print("Selecting Match Round")
 
-        for round_num in range(37, len(rounds)):
+        for round_num in range(9, len(rounds)):
             time.sleep(FIXED_DELAY)
             round_element = wait.until(EC.element_to_be_clickable((By.ID, 'selRoundId')))
             round_select = Select(round_element)
@@ -100,6 +100,7 @@ def data_center(meet_year, seq):
                     print("Table found")
                     home_team_name = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'main-soccer-teamName-txt')))
                     away_team_name = wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'main-soccer-teamName-txt01')))
+                    score = driver.find_elements(By.CSS_SELECTOR, '.main-soccer-teamName-txt02')
                     managers = driver.find_elements(By.CSS_SELECTOR, '.main-soccer-txt02.mt5')
 
                     team_data_home.extend([meet_year, round_num, home_team_name.text, managers[0].text.strip(), away_team_name.text])
@@ -207,4 +208,4 @@ def data_center(meet_year, seq):
     print(f"Saved data to {output_file}")
 
 
-data_center(2023, '하나은행 K리그1-37')
+data_center(2023, '하나은행 K리그1-9')
